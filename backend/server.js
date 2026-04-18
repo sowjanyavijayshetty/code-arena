@@ -31,3 +31,7 @@ app.listen(PORT, () => {
 });
 
 module.exports = app;
+
+app.get("/", (req, res) => {
+  res.send("Code Arena Backend is Live 🚀");
+});
