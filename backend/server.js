@@ -1,4 +1,3 @@
-
 const express = require('express');
 const cors = require('cors');
 const questionsRouter = require('./routes/questions');
@@ -9,7 +8,9 @@ const adminRouter = require('./routes/admin');
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-app.use(cors());
+app.use(cors({
+  origin: '*'
+}));
 app.use(express.json());
 
 app.use((req, res, next) => {
@@ -26,12 +27,13 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-app.listen(PORT, () => {
-  console.log(`\n🚀  Code Arena Backend  →  http://localhost:${PORT}\n`);
-});
-
-module.exports = app;
-
+// ✅ Root route (move here)
 app.get("/", (req, res) => {
   res.send("Code Arena Backend is Live 🚀");
 });
+
+app.listen(PORT, () => {
+  console.log(`🚀 Code Arena Backend running on port ${PORT}`);
+});
+
+module.exports = app;
