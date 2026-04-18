@@ -8,7 +8,7 @@ const adminRouter = require('./routes/admin');
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-// ✅ Better CORS (important for Vercel)
+// ✅ Explicit CORS (important for Vercel)
 app.use(cors({
   origin: '*'
 }));
@@ -32,7 +32,7 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// ✅ Root route (helps testing + uptime monitor)
+// ✅ Root route (for testing + uptime)
 app.get('/', (req, res) => {
   res.send('Code Arena Backend is Live 🚀');
 });

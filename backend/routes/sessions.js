@@ -9,10 +9,17 @@ router.get('/:id', (req, res) => {
   const session = store.sessions.find(s => s.id.toUpperCase() === req.params.id.toUpperCase());
   if (!session) return res.status(404).json({ error: 'Session not found' });
 
-  // Mark this session as logged in
   const idx = store.sessions.findIndex(s => s.id === session.id);
-  if (store.sessions[idx].status === 'waiting' && !store.sessions[idx].loggedIn) {
+
+  // If already locked by another login, reject
+  if (store.sessions[idx].locked) {
+    return res.status(423).json({ error: 'This session ID is already in use. Each session can only be used once.' });
+  }
+
+  // Lock and mark logged in on first access
+  if (!store.sessions[idx].loggedIn) {
     store.sessions[idx].loggedIn = true;
+    store.sessions[idx].locked = true;
     store.sessions[idx].loginTime = new Date().toISOString();
   }
 
@@ -65,8 +72,8 @@ router.post('/pair', adminAuth, (req, res) => {
   const id1 = 'S' + String(store.sessions.length + 1).padStart(2, '0');
   const id2 = 'S' + String(store.sessions.length + 2).padStart(2, '0');
   const now = new Date().toISOString();
-  const s1 = { id: id1, pairedWith: id2, questionIndex: qIdx, status: 'waiting', submission: null, timedOut: false, loggedIn: false, loginTime: null, createdAt: now };
-  const s2 = { id: id2, pairedWith: id1, questionIndex: qIdx, status: 'waiting', submission: null, timedOut: false, loggedIn: false, loginTime: null, createdAt: now };
+  const s1 = { id: id1, pairedWith: id2, questionIndex: qIdx, status: 'waiting', submission: null, timedOut: false, loggedIn: false, locked: false, loginTime: null, createdAt: now };
+  const s2 = { id: id2, pairedWith: id1, questionIndex: qIdx, status: 'waiting', submission: null, timedOut: false, loggedIn: false, locked: false, loginTime: null, createdAt: now };
   store.sessions.push(s1, s2);
   res.status(201).json([s1, s2]);
 });
@@ -78,7 +85,7 @@ router.patch('/:id', adminAuth, (req, res) => {
   const { action, questionIndex } = req.body;
 
   if (action === 'reset') {
-    store.sessions[idx] = { ...store.sessions[idx], status: 'waiting', submission: null, timedOut: false, loggedIn: false, loginTime: null };
+    store.sessions[idx] = { ...store.sessions[idx], status: 'waiting', submission: null, timedOut: false, loggedIn: false, locked: false, loginTime: null };
   } else if (action === 'timeout') {
     const paired = store.sessions[idx].pairedWith;
     store.sessions[idx] = { ...store.sessions[idx], timedOut: true, status: 'timedout' };
