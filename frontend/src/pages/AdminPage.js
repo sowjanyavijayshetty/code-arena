@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import { useAdmin } from '../context/AdminContext';
@@ -29,19 +29,27 @@ export default function AdminPage() {
   };
 
   if (!isAdmin) return null;
-  if (loading && !dashboard) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-2)' }}>Loading...</div>;
+  if (loading && !dashboard) return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ width: 48, height: 48, border: '2px solid var(--purple)', borderTopColor: 'var(--cyan)', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 16px' }} />
+        <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+        <p style={{ color: 'var(--text-3)', fontFamily: 'var(--mono)', fontSize: 12 }}>LOADING...</p>
+      </div>
+    </div>
+  );
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-0)', display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
-      <div style={{ background: 'var(--bg-2)', borderBottom: '1px solid var(--border)', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ background: 'rgba(7,7,26,0.95)', borderBottom: '1px solid var(--border)', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', backdropFilter: 'blur(8px)', position: 'sticky', top: 0, zIndex: 100 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-1)', padding: '16px 0', marginRight: 24 }}>⌨️ Code Arena Admin</span>
+          <span style={{ fontFamily: 'var(--display)', fontSize: 12, fontWeight: 700, letterSpacing: 2, color: 'var(--purple-light)', padding: '16px 0', marginRight: 24 }}>CODE CREST · ADMIN</span>
           {TABS.map(t => (
             <button key={t} onClick={() => setTab(t)} style={{
-              padding: '16px 18px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, fontFamily: 'var(--sans)',
-              color: tab === t ? 'var(--accent-light)' : 'var(--text-3)',
-              borderBottom: `2px solid ${tab === t ? 'var(--accent)' : 'transparent'}`,
+              padding: '16px 18px', background: 'none', border: 'none', cursor: 'pointer',
+              fontSize: 13, fontFamily: 'var(--sans)', color: tab === t ? 'var(--cyan)' : 'var(--text-3)',
+              borderBottom: `2px solid ${tab === t ? 'var(--cyan)' : 'transparent'}`,
               transition: 'all 0.15s',
             }}>{TAB_LABELS[t]}</button>
           ))}
@@ -52,8 +60,7 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* Content */}
-      <div style={{ flex: 1, padding: '28px 28px', maxWidth: 1100, width: '100%', margin: '0 auto' }}>
+      <div style={{ flex: 1, padding: '28px', maxWidth: 1100, width: '100%', margin: '0 auto' }}>
         {tab === 'dashboard' && <DashboardTab data={dashboard} onRefresh={fetchDashboard} />}
         {tab === 'questions' && <QuestionsTab questions={dashboard?.questions || []} onRefresh={fetchDashboard} />}
         {tab === 'sessions' && <SessionsTab sessions={dashboard?.sessions || []} questions={dashboard?.questions || []} onRefresh={fetchDashboard} />}
@@ -63,46 +70,81 @@ export default function AdminPage() {
   );
 }
 
-// ── Dashboard ──────────────────────────────────────────────────────────────
+function StatCard({ label, value, color }) {
+  return (
+    <div style={{ background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '16px 18px' }}>
+      <p style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 8, letterSpacing: 1 }}>{label.toUpperCase()}</p>
+      <p style={{ fontSize: 32, fontWeight: 700, color, fontFamily: 'var(--mono)', textShadow: color !== 'var(--text-2)' ? `0 0 20px ${color}60` : 'none' }}>{value}</p>
+    </div>
+  );
+}
+
+function SessionCard({ session, compact, onReset }) {
+  const s = session;
+  const isLogged = s.loggedIn;
+  const isSolved = s.submission?.allPassed;
+  const isSubmitted = s.status === 'submitted';
+  const isTimedOut = s.timedOut;
+  const statusLabel = isTimedOut ? 'TIMED OUT' : isSolved ? 'SOLVED' : isSubmitted ? 'SUBMITTED' : isLogged ? 'ONLINE' : 'WAITING';
+  const statusColor = isTimedOut ? 'var(--red)' : isSolved ? 'var(--green)' : isSubmitted ? 'var(--amber)' : isLogged ? 'var(--cyan)' : 'var(--text-3)';
+
+  return (
+    <div style={{
+      background: 'var(--bg-3)', borderRadius: 'var(--radius-md)', padding: '12px 16px',
+      border: `1px solid ${isTimedOut ? 'rgba(255,82,82,0.2)' : isSolved ? 'rgba(0,230,118,0.2)' : isLogged ? 'rgba(0,229,255,0.15)' : 'var(--border)'}`,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: s.submission ? 8 : 0 }}>
+        <span style={{ fontFamily: 'var(--mono)', fontSize: 15, fontWeight: 700, color: isLogged ? 'var(--cyan)' : 'var(--text-1)' }}>{s.id}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: statusColor, display: 'inline-block', boxShadow: `0 0 6px ${statusColor}` }} />
+          <span style={{ fontSize: 10, fontWeight: 700, color: statusColor, letterSpacing: 1 }}>{statusLabel}</span>
+        </div>
+      </div>
+      {s.loginTime && <p style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--mono)', marginBottom: 4 }}>Logged in: {new Date(s.loginTime).toLocaleTimeString()}</p>}
+      {s.submission && (
+        <div style={{ fontSize: 12, color: 'var(--text-3)', lineHeight: 1.7 }}>
+          <div>Submitted: {s.submission.timestamp}</div>
+          <div style={{ color: isSolved ? 'var(--green)' : 'var(--amber)' }}>{s.submission.passed}/{s.submission.total} tests passed</div>
+        </div>
+      )}
+      {!compact && onReset && (
+        <button className="btn" style={{ padding: '4px 10px', fontSize: 11, marginTop: 8 }} onClick={onReset}>Reset</button>
+      )}
+    </div>
+  );
+}
+
 function DashboardTab({ data, onRefresh }) {
   if (!data) return null;
   const { stats, sessions, questions } = data;
 
-  const statCards = [
-    { label: 'Total Sessions', value: stats.total, color: 'var(--accent-light)' },
-    { label: 'Solved', value: stats.solved, color: 'var(--green)' },
-    { label: 'Submitted', value: stats.submitted, color: 'var(--amber)' },
-    { label: 'Timed Out', value: stats.timedOut, color: 'var(--red)' },
-    { label: 'Waiting', value: stats.waiting, color: 'var(--text-2)' },
-  ];
-
   return (
     <div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 28 }}>
-        {statCards.map(s => (
-          <div key={s.label} style={{ background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '16px 18px' }}>
-            <p style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 8 }}>{s.label}</p>
-            <p style={{ fontSize: 28, fontWeight: 700, color: s.color, fontFamily: 'var(--mono)' }}>{s.value}</p>
-          </div>
-        ))}
+        <StatCard label="Total" value={stats.total} color="var(--purple-light)" />
+        <StatCard label="Solved" value={stats.solved} color="var(--green)" />
+        <StatCard label="Submitted" value={stats.submitted} color="var(--amber)" />
+        <StatCard label="Timed Out" value={stats.timedOut} color="var(--red)" />
+        <StatCard label="Waiting" value={stats.waiting} color="var(--text-2)" />
       </div>
 
-      <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 14, color: 'var(--text-2)' }}>Live Session Overview</h3>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <h3 style={{ fontSize: 13, fontWeight: 700, letterSpacing: 2, color: 'var(--text-3)', marginBottom: 14 }}>LIVE PAIRS</h3>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {Array.from({ length: Math.ceil(sessions.length / 2) }, (_, i) => {
           const s1 = sessions[i * 2], s2 = sessions[i * 2 + 1];
           if (!s1 || !s2) return null;
           const q = questions[s1.questionIndex];
+          const bothOnline = s1.loggedIn && s2.loggedIn;
           return (
-            <div key={i} style={{ background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '14px 18px' }}>
+            <div key={i} style={{ background: 'var(--bg-2)', border: `1px solid ${bothOnline ? 'rgba(0,229,255,0.2)' : 'var(--border)'}`, borderRadius: 'var(--radius-md)', padding: '14px 18px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                 <span className="badge purple">Pair {i + 1}</span>
-                <span style={{ fontSize: 13, color: 'var(--text-2)' }}>→ {q?.title || 'No question'}</span>
+                {bothOnline && <span className="badge cyan">● BOTH ONLINE</span>}
+                <span style={{ fontSize: 12, color: 'var(--text-3)' }}>→ {q?.title || 'No question'}</span>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                {[s1, s2].map(s => (
-                  <SessionCard key={s.id} session={s} compact />
-                ))}
+                <SessionCard session={s1} compact />
+                <SessionCard session={s2} compact />
               </div>
             </div>
           );
@@ -112,7 +154,6 @@ function DashboardTab({ data, onRefresh }) {
   );
 }
 
-// ── Questions ──────────────────────────────────────────────────────────────
 function QuestionsTab({ questions, onRefresh }) {
   const [editing, setEditing] = useState(null);
   const [showForm, setShowForm] = useState(false);
@@ -130,14 +171,11 @@ function QuestionsTab({ questions, onRefresh }) {
   const openEdit = (q) => { setEditing(q.id); setForm({ ...q, testCases: q.testCases.map(t => ({ ...t })) }); setShowForm(true); };
 
   const saveQuestion = async () => {
-    if (!form.title.trim()) return alert('Title is required');
+    if (!form.title.trim()) return alert('Title required');
     setSaving(true);
     try {
-      if (editing) {
-        await api.put(`/questions/${editing}`, form);
-      } else {
-        await api.post('/questions', form);
-      }
+      if (editing) await api.put(`/questions/${editing}`, form);
+      else await api.post('/questions', form);
       setShowForm(false);
       onRefresh();
       const r = await api.get('/questions/admin/full');
@@ -147,22 +185,18 @@ function QuestionsTab({ questions, onRefresh }) {
   };
 
   const deleteQ = async (id) => {
-    if (!window.confirm('Delete this question? Sessions assigned to it will lose their question.')) return;
+    if (!window.confirm('Delete question?')) return;
     await api.delete(`/questions/${id}`);
     onRefresh();
     const r = await api.get('/questions/admin/full');
     setFullQuestions(r.data);
   };
 
-  const addTC = () => setForm(f => ({ ...f, testCases: [...f.testCases, { input: '', expected: '' }] }));
-  const removeTC = (i) => setForm(f => ({ ...f, testCases: f.testCases.filter((_, j) => j !== i) }));
-  const updateTC = (i, field, val) => setForm(f => ({ ...f, testCases: f.testCases.map((t, j) => j === i ? { ...t, [field]: val } : t) }));
-
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
-        <h2 style={{ fontSize: 19, fontWeight: 700 }}>Questions ({fullQuestions.length})</h2>
-        <button className="btn primary" onClick={openAdd}>+ Add Question</button>
+        <h2 style={{ fontSize: 17, fontWeight: 700, fontFamily: 'var(--display)', letterSpacing: 1, color: 'var(--purple-light)' }}>QUESTIONS ({fullQuestions.length})</h2>
+        {!showForm && <button className="btn primary" onClick={openAdd}>+ Add Question</button>}
       </div>
 
       {!showForm ? (
@@ -171,88 +205,81 @@ function QuestionsTab({ questions, onRefresh }) {
             <div key={q.id} style={{ background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '18px 20px' }}>
               <div style={{ display: 'flex', alignItems: 'start', justifyContent: 'space-between', marginBottom: 10 }}>
                 <div>
-                  <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 6 }}>
+                  <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
                     <span className="badge purple">Q{i + 1}</span>
                     <span className={`badge ${q.difficulty === 'Easy' ? 'green' : q.difficulty === 'Hard' ? 'red' : 'amber'}`}>{q.difficulty}</span>
                   </div>
-                  <p style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>{q.title}</p>
+                  <p style={{ fontSize: 15, fontWeight: 600 }}>{q.title}</p>
                 </div>
                 <div style={{ display: 'flex', gap: 6 }}>
-                  <button className="btn" style={{ padding: '5px 12px', fontSize: 12 }} onClick={() => openEdit(q)}>Edit</button>
-                  <button className="btn danger" style={{ padding: '5px 12px', fontSize: 12 }} onClick={() => deleteQ(q.id)}>Delete</button>
+                  <button className="btn" style={{ padding: '5px 12px', fontSize: 11 }} onClick={() => openEdit(q)}>Edit</button>
+                  <button className="btn danger" style={{ padding: '5px 12px', fontSize: 11 }} onClick={() => deleteQ(q.id)}>Del</button>
                 </div>
               </div>
-              <p style={{ fontSize: 13, color: 'var(--text-3)', lineHeight: 1.6, marginBottom: 10 }}>{q.description}</p>
-              <p style={{ fontSize: 12, color: 'var(--text-3)' }}>{q.testCases.length} test cases</p>
+              <p style={{ fontSize: 13, color: 'var(--text-3)', lineHeight: 1.6, marginBottom: 8 }}>{q.description}</p>
+              <p style={{ fontSize: 12, color: 'var(--purple)', fontFamily: 'var(--mono)' }}>{q.testCases.length} test cases</p>
             </div>
           ))}
         </div>
       ) : (
         <div style={{ background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: 24 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 20 }}>{editing ? 'Edit Question' : 'New Question'}</h3>
+          <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 20, fontFamily: 'var(--display)', letterSpacing: 1, color: 'var(--cyan)' }}>{editing ? 'EDIT QUESTION' : 'NEW QUESTION'}</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px', gap: 12 }}>
               <div>
-                <label style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 6 }}>Title *</label>
+                <label style={{ fontSize: 11, color: 'var(--text-3)', display: 'block', marginBottom: 6, letterSpacing: 1 }}>TITLE *</label>
                 <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} className="input" placeholder="Question title" />
               </div>
               <div>
-                <label style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 6 }}>Difficulty</label>
+                <label style={{ fontSize: 11, color: 'var(--text-3)', display: 'block', marginBottom: 6, letterSpacing: 1 }}>DIFFICULTY</label>
                 <select value={form.difficulty} onChange={e => setForm(f => ({ ...f, difficulty: e.target.value }))}
-                  style={{ padding: '10px 14px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'var(--bg-1)', color: 'var(--text-1)', fontSize: 14, fontFamily: 'var(--sans)' }}>
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'var(--bg-1)', color: 'var(--text-1)', fontSize: 14, fontFamily: 'var(--sans)' }}>
                   <option>Easy</option><option>Medium</option><option>Hard</option>
                 </select>
               </div>
             </div>
-
             <div>
-              <label style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 6 }}>Description *</label>
+              <label style={{ fontSize: 11, color: 'var(--text-3)', display: 'block', marginBottom: 6, letterSpacing: 1 }}>DESCRIPTION *</label>
               <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} className="input" rows={3} placeholder="Problem statement..." style={{ resize: 'vertical' }} />
             </div>
-
             <div>
-              <div style={{ display: 'flex', gap: 0, marginBottom: 10 }}>
+              <label style={{ fontSize: 11, color: 'var(--text-3)', display: 'block', marginBottom: 8, letterSpacing: 1 }}>STARTER CODE</label>
+              <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
                 {['javascript', 'python', 'java', 'cpp'].map(l => (
                   <button key={l} onClick={() => setActiveStarter(l)} style={{
-                    padding: '6px 14px', background: activeStarter === l ? 'var(--bg-4)' : 'var(--bg-1)',
-                    border: '1px solid var(--border)', color: activeStarter === l ? 'var(--text-1)' : 'var(--text-3)',
-                    fontSize: 12, fontFamily: 'var(--sans)', cursor: 'pointer', marginRight: 4, borderRadius: 'var(--radius-sm)',
+                    padding: '5px 12px', borderRadius: 'var(--radius-sm)', fontSize: 12, fontFamily: 'var(--mono)', cursor: 'pointer',
+                    background: activeStarter === l ? 'var(--purple-dim)' : 'var(--bg-1)',
+                    border: `1px solid ${activeStarter === l ? 'var(--purple)' : 'var(--border)'}`,
+                    color: activeStarter === l ? 'var(--purple-light)' : 'var(--text-3)',
                   }}>{l}</button>
                 ))}
               </div>
-              <textarea
-                value={form.starterCode?.[activeStarter] || ''}
-                onChange={e => setForm(f => ({ ...f, starterCode: { ...f.starterCode, [activeStarter]: e.target.value } }))}
-                className="input" rows={6}
-                placeholder={`Starter code for ${activeStarter}...`}
-                style={{ fontFamily: 'var(--mono)', fontSize: 12, resize: 'vertical' }}
-              />
+              <textarea value={form.starterCode?.[activeStarter] || ''} onChange={e => setForm(f => ({ ...f, starterCode: { ...f.starterCode, [activeStarter]: e.target.value } }))}
+                className="input" rows={6} placeholder={`Starter code for ${activeStarter}...`} style={{ fontFamily: 'var(--mono)', fontSize: 12, resize: 'vertical' }} />
             </div>
-
             <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                <label style={{ fontSize: 12, color: 'var(--text-3)' }}>Test Cases *</label>
-                <button className="btn success" style={{ padding: '4px 12px', fontSize: 12 }} onClick={addTC}>+ Add Case</button>
+                <label style={{ fontSize: 11, color: 'var(--text-3)', letterSpacing: 1 }}>TEST CASES *</label>
+                <button className="btn success" style={{ padding: '4px 12px', fontSize: 11 }} onClick={() => setForm(f => ({ ...f, testCases: [...f.testCases, { input: '', expected: '' }] }))}>+ Add Case</button>
               </div>
               {form.testCases.map((tc, i) => (
-                <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 8, marginBottom: 8, alignItems: 'start' }}>
+                <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 8, marginBottom: 8 }}>
                   <div>
-                    <p style={{ fontSize: 10, color: 'var(--text-3)', marginBottom: 4 }}>Input (use \n for new line)</p>
-                    <textarea value={tc.input} onChange={e => updateTC(i, 'input', e.target.value)} rows={2}
+                    {i === 0 && <p style={{ fontSize: 10, color: 'var(--text-3)', marginBottom: 4 }}>Input (\\n = new line)</p>}
+                    <textarea value={tc.input} onChange={e => setForm(f => ({ ...f, testCases: f.testCases.map((t, j) => j === i ? { ...t, input: e.target.value } : t) }))} rows={2}
                       style={{ width: '100%', padding: '8px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'var(--bg-1)', color: 'var(--text-1)', fontSize: 12, fontFamily: 'var(--mono)', resize: 'vertical' }} />
                   </div>
                   <div>
-                    <p style={{ fontSize: 10, color: 'var(--text-3)', marginBottom: 4 }}>Expected output</p>
-                    <textarea value={tc.expected} onChange={e => updateTC(i, 'expected', e.target.value)} rows={2}
+                    {i === 0 && <p style={{ fontSize: 10, color: 'var(--text-3)', marginBottom: 4 }}>Expected output</p>}
+                    <textarea value={tc.expected} onChange={e => setForm(f => ({ ...f, testCases: f.testCases.map((t, j) => j === i ? { ...t, expected: e.target.value } : t) }))} rows={2}
                       style={{ width: '100%', padding: '8px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'var(--bg-1)', color: 'var(--text-1)', fontSize: 12, fontFamily: 'var(--mono)', resize: 'vertical' }} />
                   </div>
-                  <button className="btn danger" style={{ padding: '6px 10px', fontSize: 12, marginTop: 20 }} onClick={() => removeTC(i)}>✕</button>
+                  <button className="btn danger" style={{ padding: '6px 10px', fontSize: 11, marginTop: i === 0 ? 20 : 0 }} onClick={() => setForm(f => ({ ...f, testCases: f.testCases.filter((_, j) => j !== i) }))}>✕</button>
                 </div>
               ))}
             </div>
-
-            <div style={{ display: 'flex', gap: 8, paddingTop: 8 }}>
-              <button className="btn primary" onClick={saveQuestion} disabled={saving}>{saving ? 'Saving...' : editing ? 'Update Question' : 'Add Question'}</button>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="btn primary" onClick={saveQuestion} disabled={saving}>{saving ? 'Saving...' : editing ? 'Update' : 'Add Question'}</button>
               <button className="btn" onClick={() => { setShowForm(false); setEditing(null); }}>Cancel</button>
             </div>
           </div>
@@ -262,7 +289,6 @@ function QuestionsTab({ questions, onRefresh }) {
   );
 }
 
-// ── Sessions ──────────────────────────────────────────────────────────────
 function SessionsTab({ sessions, questions, onRefresh }) {
   const addPair = async () => {
     const qIdx = Math.floor(sessions.length / 2) % Math.max(questions.length, 1);
@@ -281,7 +307,7 @@ function SessionsTab({ sessions, questions, onRefresh }) {
   };
 
   const timeoutPair = async (id) => {
-    if (!window.confirm('Force timeout both sessions in this pair?')) return;
+    if (!window.confirm('Force timeout both sessions?')) return;
     await api.patch(`/sessions/${id}`, { action: 'timeout' });
     onRefresh();
   };
@@ -295,7 +321,7 @@ function SessionsTab({ sessions, questions, onRefresh }) {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
-        <h2 style={{ fontSize: 19, fontWeight: 700 }}>Sessions ({sessions.length})</h2>
+        <h2 style={{ fontSize: 17, fontWeight: 700, fontFamily: 'var(--display)', letterSpacing: 1, color: 'var(--purple-light)' }}>SESSIONS ({sessions.length})</h2>
         <button className="btn success" onClick={addPair}>+ Add Session Pair</button>
       </div>
 
@@ -303,27 +329,27 @@ function SessionsTab({ sessions, questions, onRefresh }) {
         {Array.from({ length: Math.ceil(sessions.length / 2) }, (_, i) => {
           const s1 = sessions[i * 2], s2 = sessions[i * 2 + 1];
           if (!s1 || !s2) return null;
-          const q = questions[s1.questionIndex];
+          const bothOnline = s1.loggedIn && s2.loggedIn;
           return (
-            <div key={i} style={{ background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '16px 20px' }}>
+            <div key={i} style={{ background: 'var(--bg-2)', border: `1px solid ${bothOnline ? 'rgba(0,229,255,0.2)' : 'var(--border)'}`, borderRadius: 'var(--radius-lg)', padding: '16px 20px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <span className="badge purple">Pair {i + 1}</span>
-                  <span style={{ fontSize: 13, color: 'var(--text-2)' }}>Question assigned:</span>
+                  {bothOnline && <span className="badge cyan">● BOTH ONLINE</span>}
+                  <span style={{ fontSize: 12, color: 'var(--text-3)' }}>Question:</span>
                   <select value={s1.questionIndex} onChange={e => changeQ(s1.id, e.target.value)}
                     style={{ padding: '4px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'var(--bg-1)', color: 'var(--text-1)', fontSize: 12, fontFamily: 'var(--sans)' }}>
                     {questions.map((q, qi) => <option key={q.id} value={qi}>Q{qi + 1}: {q.title}</option>)}
                   </select>
                 </div>
                 <div style={{ display: 'flex', gap: 6 }}>
-                  <button className="btn danger" style={{ padding: '4px 12px', fontSize: 12 }} onClick={() => timeoutPair(s1.id)}>Force Timeout</button>
-                  <button className="btn danger" style={{ padding: '4px 12px', fontSize: 12 }} onClick={() => deletePair(s1.id)}>Delete Pair</button>
+                  <button className="btn danger" style={{ padding: '4px 12px', fontSize: 11 }} onClick={() => timeoutPair(s1.id)}>Force Timeout</button>
+                  <button className="btn danger" style={{ padding: '4px 12px', fontSize: 11 }} onClick={() => deletePair(s1.id)}>Delete Pair</button>
                 </div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                {[s1, s2].map(s => (
-                  <SessionCard key={s.id} session={s} onReset={() => resetSession(s.id)} />
-                ))}
+                <SessionCard session={s1} onReset={() => resetSession(s1.id)} />
+                <SessionCard session={s2} onReset={() => resetSession(s2.id)} />
               </div>
             </div>
           );
@@ -333,36 +359,6 @@ function SessionsTab({ sessions, questions, onRefresh }) {
   );
 }
 
-function SessionCard({ session, compact, onReset }) {
-  const s = session;
-  const statusColor = s.timedOut ? 'var(--red)' : s.status === 'submitted' && s.submission?.allPassed ? 'var(--green)' : s.status === 'submitted' ? 'var(--amber)' : 'var(--text-3)';
-  const statusLabel = s.timedOut ? 'TIMED OUT' : s.status === 'submitted' ? (s.submission?.allPassed ? 'SOLVED' : 'SUBMITTED') : 'WAITING';
-
-  return (
-    <div style={{
-      background: 'var(--bg-3)', borderRadius: 'var(--radius-md)', padding: '12px 16px',
-      border: `1px solid ${s.timedOut ? 'rgba(225,112,85,0.2)' : s.submission?.allPassed ? 'rgba(0,184,148,0.2)' : 'var(--border)'}`,
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: s.submission ? 8 : 0 }}>
-        <span style={{ fontFamily: 'var(--mono)', fontSize: 15, fontWeight: 700 }}>{s.id}</span>
-        <span style={{ fontSize: 11, fontWeight: 700, color: statusColor }}>{statusLabel}</span>
-      </div>
-      {s.submission && (
-        <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 8, lineHeight: 1.6 }}>
-          <div>Submitted: {s.submission.timestamp}</div>
-          <div style={{ color: s.submission.allPassed ? 'var(--green)' : 'var(--amber)' }}>
-            {s.submission.passed}/{s.submission.total} tests passed
-          </div>
-        </div>
-      )}
-      {!compact && onReset && (
-        <button className="btn" style={{ padding: '4px 10px', fontSize: 11, marginTop: 4 }} onClick={onReset}>Reset</button>
-      )}
-    </div>
-  );
-}
-
-// ── Settings ──────────────────────────────────────────────────────────────
 function SettingsTab({ config, onRefresh }) {
   const [timer, setTimer] = useState(config?.timerMinutes || 30);
   const [newPass, setNewPass] = useState('');
@@ -382,33 +378,39 @@ function SettingsTab({ config, onRefresh }) {
 
   return (
     <div style={{ maxWidth: 480 }}>
-      <h2 style={{ fontSize: 19, fontWeight: 700, marginBottom: 24 }}>Settings</h2>
+      <h2 style={{ fontSize: 17, fontWeight: 700, fontFamily: 'var(--display)', letterSpacing: 1, color: 'var(--purple-light)', marginBottom: 24 }}>SETTINGS</h2>
       <div style={{ background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: 24, display: 'flex', flexDirection: 'column', gap: 20 }}>
         <div>
-          <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 8 }}>Timer Duration (minutes)</label>
-          <p style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 10 }}>This is the countdown timer shown to participants. Applied when they click "Start Timer".</p>
+          <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 6, color: 'var(--text-2)' }}>Timer Duration (minutes)</label>
+          <p style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 10 }}>Timer starts automatically when both participants in a pair log in.</p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <input type="number" min={1} max={180} value={timer} onChange={e => setTimer(Number(e.target.value))}
-              style={{ width: 100, padding: '10px 14px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'var(--bg-1)', color: 'var(--text-1)', fontSize: 16, textAlign: 'center', fontFamily: 'var(--mono)', fontWeight: 700 }} />
-            <span style={{ fontSize: 13, color: 'var(--text-3)' }}>{timer} minutes = {(timer * 60).toLocaleString()} seconds</span>
+              style={{ width: 100, padding: '10px 14px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-cyan)', background: 'var(--bg-1)', color: 'var(--cyan)', fontSize: 20, textAlign: 'center', fontFamily: 'var(--mono)', fontWeight: 700, outline: 'none' }} />
+            <span style={{ fontSize: 13, color: 'var(--text-3)' }}>{timer} min = {(timer * 60).toLocaleString()}s</span>
           </div>
         </div>
-
         <div>
-          <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 8 }}>Change Admin Password</label>
-          <input type="password" value={newPass} onChange={e => setNewPass(e.target.value)} className="input" placeholder="New password (leave blank to keep current)" />
+          <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 6, color: 'var(--text-2)' }}>Change Admin Password</label>
+          <input type="password" value={newPass} onChange={e => setNewPass(e.target.value)} className="input" placeholder="New password (blank = keep current)" />
+        </div>
+        <button className="btn primary" onClick={save} disabled={saving} style={{ padding: '11px 28px', fontSize: 14 }}>
+          {saving ? 'Saving...' : saved ? '✓ Saved!' : 'Save Settings'}
+        </button>
+
+        <div style={{ background: 'var(--bg-3)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '14px 16px' }}>
+          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, color: 'var(--purple)', marginBottom: 6 }}>SESSION FLOW</p>
+          <p style={{ fontSize: 12, color: 'var(--text-3)', lineHeight: 1.8 }}>
+            1. Both participants enter their session IDs<br/>
+            2. Each sees a "Waiting for opponent" screen<br/>
+            3. Once both are logged in → challenge + timer start simultaneously<br/>
+            4. First to pass all tests → opponent session auto-closes
+          </p>
         </div>
 
-        <div style={{ paddingTop: 4 }}>
-          <button className="btn primary" onClick={save} disabled={saving} style={{ padding: '10px 28px' }}>
-            {saving ? 'Saving...' : saved ? '✓ Saved!' : 'Save Settings'}
-          </button>
-        </div>
-
-        <div style={{ background: 'var(--bg-3)', borderRadius: 'var(--radius-md)', padding: '14px 16px', marginTop: 8 }}>
-          <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-2)', marginBottom: 8 }}>Judge0 Integration</p>
+        <div style={{ background: 'var(--bg-3)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '14px 16px' }}>
+          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, color: 'var(--cyan)', marginBottom: 6 }}>JUDGE0 INTEGRATION</p>
           <p style={{ fontSize: 12, color: 'var(--text-3)', lineHeight: 1.7 }}>
-            For Python, Java, and C++ execution, set the <code style={{ fontFamily: 'var(--mono)', color: 'var(--accent-light)' }}>JUDGE0_URL</code> and optionally <code style={{ fontFamily: 'var(--mono)', color: 'var(--accent-light)' }}>JUDGE0_KEY</code> environment variables in your backend .env file. JavaScript runs natively in the Node.js backend.
+            Set <code style={{ fontFamily: 'var(--mono)', color: 'var(--purple-light)' }}>JUDGE0_URL</code> and <code style={{ fontFamily: 'var(--mono)', color: 'var(--purple-light)' }}>JUDGE0_KEY</code> in backend .env for Python/Java/C++ execution.
           </p>
         </div>
       </div>

@@ -6,7 +6,9 @@ const api = axios.create({
 
 api.interceptors.request.use(config => {
   const token = localStorage.getItem('arena_admin_token');
-  if (token) config.headers['x-admin-token'] = token;
+  if (token) {
+    config.headers['x-admin-token'] = token;
+  }
   return config;
 });
 

@@ -4,12 +4,10 @@ const router = express.Router();
 const store = require('../data/store');
 const { adminAuth } = require('../middleware/auth');
 
-// GET config
 router.get('/config', adminAuth, (req, res) => {
   res.json({ timerMinutes: store.config.timerMinutes });
 });
 
-// UPDATE config
 router.put('/config', adminAuth, (req, res) => {
   const { timerMinutes, adminPassword } = req.body;
   if (typeof timerMinutes === 'number') store.config.timerMinutes = timerMinutes;
@@ -17,7 +15,6 @@ router.put('/config', adminAuth, (req, res) => {
   res.json({ timerMinutes: store.config.timerMinutes });
 });
 
-// Verify admin password
 router.post('/login', (req, res) => {
   const { password } = req.body;
   if (password === store.config.adminPassword) {
@@ -27,7 +24,6 @@ router.post('/login', (req, res) => {
   }
 });
 
-// Full dashboard stats
 router.get('/dashboard', adminAuth, (req, res) => {
   const total = store.sessions.length;
   const submitted = store.sessions.filter(s => s.status === 'submitted').length;
@@ -41,6 +37,7 @@ router.get('/dashboard', adminAuth, (req, res) => {
     questions: store.questions.map(q => ({
       id: q.id, title: q.title, difficulty: q.difficulty,
       testCases: q.testCases.length,
+      questionIndex: store.questions.indexOf(q),
     })),
     config: { timerMinutes: store.config.timerMinutes },
   });

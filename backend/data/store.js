@@ -1,5 +1,4 @@
 
-// In-memory data store (replace with a DB for production)
 const { v4: uuidv4 } = require('uuid');
 
 const store = {
@@ -69,12 +68,12 @@ const store = {
   ],
 
   sessions: [
-    { id: 'S01', pairedWith: 'S02', questionIndex: 0, status: 'waiting', submission: null, timedOut: false, createdAt: new Date().toISOString() },
-    { id: 'S02', pairedWith: 'S01', questionIndex: 0, status: 'waiting', submission: null, timedOut: false, createdAt: new Date().toISOString() },
-    { id: 'S03', pairedWith: 'S04', questionIndex: 1, status: 'waiting', submission: null, timedOut: false, createdAt: new Date().toISOString() },
-    { id: 'S04', pairedWith: 'S03', questionIndex: 1, status: 'waiting', submission: null, timedOut: false, createdAt: new Date().toISOString() },
-    { id: 'S05', pairedWith: 'S06', questionIndex: 2, status: 'waiting', submission: null, timedOut: false, createdAt: new Date().toISOString() },
-    { id: 'S06', pairedWith: 'S05', questionIndex: 2, status: 'waiting', submission: null, timedOut: false, createdAt: new Date().toISOString() },
+    { id: 'S01', pairedWith: 'S02', questionIndex: 0, status: 'waiting', submission: null, timedOut: false, loggedIn: false, loginTime: null, createdAt: new Date().toISOString() },
+    { id: 'S02', pairedWith: 'S01', questionIndex: 0, status: 'waiting', submission: null, timedOut: false, loggedIn: false, loginTime: null, createdAt: new Date().toISOString() },
+    { id: 'S03', pairedWith: 'S04', questionIndex: 1, status: 'waiting', submission: null, timedOut: false, loggedIn: false, loginTime: null, createdAt: new Date().toISOString() },
+    { id: 'S04', pairedWith: 'S03', questionIndex: 1, status: 'waiting', submission: null, timedOut: false, loggedIn: false, loginTime: null, createdAt: new Date().toISOString() },
+    { id: 'S05', pairedWith: 'S06', questionIndex: 2, status: 'waiting', submission: null, timedOut: false, loggedIn: false, loginTime: null, createdAt: new Date().toISOString() },
+    { id: 'S06', pairedWith: 'S05', questionIndex: 2, status: 'waiting', submission: null, timedOut: false, loggedIn: false, loginTime: null, createdAt: new Date().toISOString() },
   ],
 };
 
