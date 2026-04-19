@@ -28,11 +28,8 @@ export default function HomePage() {
       <div style={{ textAlign: 'center', maxWidth: 560, position: 'relative', zIndex: 1 }}>
         {/* Event badge */}
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--cyan-dim)', border: '1px solid rgba(0,229,255,0.2)', borderRadius: 20, padding: '5px 14px', marginBottom: 28 }}>
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--red)', boxShadow: '0 0 8px var(--red)', display: 'inline-block' }} />
-          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2 }}>
-            <span style={{ color: 'var(--text-3)' }}>BID · BUILD · </span>
-            <span style={{ color: 'var(--red)', textShadow: '0 0 10px rgba(255,82,82,0.6)' }}>BREAK</span>
-          </span>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--cyan)', boxShadow: '0 0 8px var(--cyan)', display: 'inline-block' }} />
+          <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--cyan)', letterSpacing: 2 }}>BID · BUILD · BREAK</span>
         </div>
 
         {/* Title */}
@@ -42,7 +39,10 @@ export default function HomePage() {
           </h1>
         </div>
 
-        <p style={{ color: 'var(--text-3)', fontSize: 13, fontFamily: 'var(--mono)', letterSpacing: 2, marginBottom: 48 }}>by CYBOTIC</p>
+        <p style={{ color: 'var(--text-3)', fontSize: 13, fontFamily: 'var(--mono)', letterSpacing: 2, marginBottom: 8 }}>POWERED BY CYBOTIC</p>
+        <p style={{ color: 'var(--text-2)', fontSize: 15, lineHeight: 1.7, marginBottom: 48 }}>
+          Live coding competition with paired sessions,<br />auto-validation &amp; real-time execution.
+        </p>
 
         {/* Action cards */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 32 }}>
@@ -62,6 +62,19 @@ export default function HomePage() {
           />
         </div>
 
+        {/* Event info */}
+        <div style={{ display: 'flex', gap: 20, justifyContent: 'center' }}>
+          {[
+            { icon: '📅', label: 'Friday, April 24th' },
+            { icon: '📍', label: 'IoT Lab, PG Block' },
+            { icon: '🏛', label: 'MITE, Mangalore' },
+          ].map(item => (
+            <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontSize: 13 }}>{item.icon}</span>
+              <span style={{ fontSize: 12, color: 'var(--text-3)', fontFamily: 'var(--mono)' }}>{item.label}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
